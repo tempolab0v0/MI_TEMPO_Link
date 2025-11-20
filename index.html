@@ -857,7 +857,7 @@ function showIntroVideo() {
       <button
         id="startIntroVideo"
         class="btn-primary"
-        style="position:absolute;z-index:10;top:50%;left:50%;transform:translate(-50%, -50%) translateY(-60px);"
+        style="position:absolute;z-index:10;top:50%;left:50%;transform:translate(-50%, -50%) translateY(calc(-60px - 1.5cm));"
       >
         Click to Play
       </button>
@@ -882,6 +882,7 @@ function showIntroVideo() {
 
   startButton.addEventListener("click", startPlayback, { once: true });
 }
+  
 function showNarrationScreen() {
   updateScreen(`
     <div style="display:flex;justify-content:center;align-items:center;height:100%;background:white;padding:40px;box-sizing:border-box;">
@@ -2190,6 +2191,7 @@ function runScreenCleanup() {
 </script>
 </body>
 </html>
+
 
 
 

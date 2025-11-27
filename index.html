@@ -1025,7 +1025,7 @@ function runTempoPractice() {
     responseSubmitted = false; // Reset for each practice trial
     if (i >= practiceTrials.length) {
       currentBlockIndex = 0; // set tempo block
-      trialCounter = 1;
+      trialCounter = completedTrials + 1;
       showRealTrialsIntro();
       return;
     }
@@ -1460,13 +1460,13 @@ function showPitchInstructions() {
       audio.onended = () => setTimeout(() => {
         pitchPracticeCompleted = true;
         currentBlockIndex = 1;
-        trialCounter = 1;
+        trialCounter = completedTrials + 1;
         startRealTrials();
       }, 1000);
     }).catch(err => {
       console.warn("Autoplay issue:", err);
       pitchPracticeCompleted = true;
-      currentBlockIndex = 1;
+      currentBlockIndex = completedTrials + 1;
       trialCounter = 1;
       startRealTrials();
     });
@@ -1534,6 +1534,8 @@ async function startRealTrials() {
 
   trialsInCurrentBlock = 0;
   animalsShownInBlock = 0;
+  trialCounter = completedTrials + 1;
+
 
   rebuildBaseHTML();
   updatePlayButton();
@@ -1576,8 +1578,9 @@ function showAutoplayOverlay(audio, callback) {
 function updatePlayButton() {
   const block = BLOCK_ORDER[currentBlockIndex];
   const trialControls = document.getElementById("trialControls");
-  const total = trialsFor(block);
-  trialControls.innerHTML = `<button id="playButton" class="btn-primary">${block.toUpperCase()} Trial ${trialCounter} of 32, GO!</button>`;
+  const total = totalTrialsCount();
+  const displayTrial = trialCounter || completedTrials + 1;
+  trialControls.innerHTML = `<button id="playButton" class="btn-primary">${block.toUpperCase()} Trial ${displayTrial} of ${total}, GO!</button>`;
   document.getElementById("playButton").addEventListener("click", playTrial);
 }
 function hideAll() {
@@ -1612,10 +1615,11 @@ async function playTrial() {
   const blockArray = blocks[block] || [];
   console.log(`Block "${block}" has ${blockArray.length} rows`);
 
-  const trial = blockArray[trialCounter - 1];
+  const blockTrialIndex = trialsInCurrentBlock;
+  const trial = blockArray[blockTrialIndex];
   if (!trial) {
-    console.error('No trial data found for', { block, trialCounter, blockLength: blockArray.length, trialRow: trial });
-    updateScreen(`<h2>Error: No trial data found for block ${block} trial ${trialCounter}. Please check your CSV and block setup.</h2>`);
+    console.error('No trial data found for', { block, blockTrialIndex, blockLength: blockArray.length, trialRow: trial });
+    updateScreen(`<h2>Error: No trial data found for block ${block} trial ${blockTrialIndex + 1}. Please check your CSV and block setup.</h2>`);
     // allow operator to recover
     rebuildBaseHTML();
     updatePlayButton();
@@ -1623,11 +1627,11 @@ async function playTrial() {
   }
 
   if (!Array.isArray(trial) || trial.length < 4) {
-    console.error('Malformed trial row (expected >=4 columns)', { block, trialCounter, trial });
-    updateScreen(`<h2>Error: Malformed trial data for ${block} trial ${trialCounter}. Please check CSV format (comma or tab separated).</h2>`);
+    console.error('Malformed trial row (expected >=4 columns)', { block, blockTrialIndex, trial });
+    updateScreen(`<h2>Error: Malformed trial data for ${block} trial ${blockTrialIndex + 1}. Please check CSV format (comma or tab separated).</h2>`);
     return;
   }
-
+  
   const [filenameRaw, originalRaw, gapRaw, testRaw] = trial;
   const filename = String(filenameRaw).trim();
   const originalSec = parseFloat(String(originalRaw).trim());
@@ -1875,17 +1879,11 @@ function handleResponse(choice) {
 
   const advanceToNextTrial = () => {
     trialsInCurrentBlock++;
-    trialCounter++;
-
+    completedTrials++;
     const currentBlockName = BLOCK_ORDER[currentBlockIndex];
     const currentBlockTotal = trialsFor(currentBlockName);
-
-    if (trialCounter > currentBlockTotal) {
-      trialCounter = 1;
-      currentBlockIndex++;
-    }
-
-    completedTrials++;
+    const blockFinished = trialsInCurrentBlock >= currentBlockTotal;
+    trialCounter = completedTrials + 1;
     updateProgress();
 
       const scheduledAnimalTrials = REAL_BLOCK_ANIMAL_TRIALS[currentBlockName];
@@ -1902,6 +1900,12 @@ function handleResponse(choice) {
     }
 
     const proceed = () => {
+      if (blockFinished) {
+        currentBlockIndex++;
+        trialsInCurrentBlock = 0;
+        animalsShownInBlock = 0;
+      }
+
       if (currentBlockIndex >= BLOCK_ORDER.length) {
         showParty();
       } else if (BLOCK_ORDER[currentBlockIndex] === "pitch" && !pitchPracticeCompleted) {
@@ -2191,6 +2195,7 @@ function runScreenCleanup() {
 </script>
 </body>
 </html>
+
 
 
 

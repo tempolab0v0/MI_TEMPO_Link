@@ -466,7 +466,7 @@ const AudioEngine = (() => {
   const sources = new Map();        // el -> { src, gain, group }
   const pending = new Set();        // elements seen before ctx starts
   const groups = {
-    narration: 0.5,  // voice MP3s
+    narration: 0.25,  // voice MP3s
     sfx:       0.5,  // correct/wrong/animals
     video:     12.0,  // quiet MP4s
     music:     15.0   // #myAudio trials
@@ -2205,6 +2205,7 @@ function runScreenCleanup() {
 </script>
 </body>
 </html>
+
 
 
 

@@ -1644,7 +1644,9 @@ async function playTrial() {
     return;
   }
 
-  // Prepare audio
+// Prepare audio. The music plays continuously across the gap visuals
+  // (still frame + video), so we simply load and start the full track
+  // here instead of trying to pause it during the visual gap.
   const audio = document.getElementById("myAudio");
   audio.src = filename;
   audio.load();
@@ -1684,22 +1686,30 @@ async function playTrial() {
   }
 
   // Compute timeline pieces
-  const preStillSec = Math.max(0, originalSec - video1Sec);
-  const gapStillSec = Math.max(0, gapSec - gapVideoSec);
-  const postStillSec = Math.max(0, testSec - video2Sec);
+  // Use the CSV durations (original/gap/test) as the source of truth so the
+  // totals for each segment (stillframe + video) match those values even if
+  // a video file is longer than the target duration.
+  const video1Used = Math.min(Math.max(video1Sec, 0), originalSec);
+  const gapVideoUsed = Math.min(Math.max(gapVideoSec, 0), gapSec);
+  const video2Used = Math.min(Math.max(video2Sec, 0), testSec);
+
+  const preStillSec = Math.max(0, originalSec - video1Used);
+  const gapStillSec = Math.max(0, gapSec - gapVideoUsed);
+  const postStillSec = Math.max(0, testSec - video2Used);
 
   let t = 0;
   visuals[0].start = t; visuals[0].end = t += preStillSec;
-  visuals[1].start = t; visuals[1].end = t += video1Sec;
+  visuals[1].start = t; visuals[1].end = t += video1Used;
   visuals[2].start = t; visuals[2].end = t += gapStillSec;
-  visuals[3].start = t; visuals[3].end = t += gapVideoSec;
-  visuals[4].start = t; visuals[4].end = t += video2Sec;
+  visuals[3].start = t; visuals[3].end = t += gapVideoUsed;
+  visuals[4].start = t; visuals[4].end = t += video2Used;
   visuals[5].start = t; visuals[5].end = t += postStillSec;
 
   console.log('Timeline for trial:', {
     filename,
     originalSec, gapSec, testSec,
     video1Sec, gapVideoSec, video2Sec,
+    video1Used, gapVideoUsed, video2Used,
     preStillSec, gapStillSec, postStillSec,
     visualsEnds: visuals.map(v => v.end)
   });
@@ -2195,6 +2205,7 @@ function runScreenCleanup() {
 </script>
 </body>
 </html>
+
 
 
 
